@@ -114,6 +114,7 @@ let selectedFiles: File[] = [];
 let pageOrder: number[] = [];
 let rotations = new Map<number, number>();
 let viewerDocument: pdfjsLib.PDFDocumentProxy | null = null;
+let viewerLoadingTask: ReturnType<typeof pdfjsLib.getDocument> | null = null;
 let viewerPageNumber = 1;
 let busy = false;
 
@@ -353,7 +354,8 @@ function bindModal(tool: Tool): void {
   if (!modal || !fileInput || !dropzone || !runButton) return;
 
   const close = () => {
-    viewerDocument?.destroy();
+    if (viewerLoadingTask) void viewerLoadingTask.destroy();
+    viewerLoadingTask = null;
     viewerDocument = null;
     modal.remove();
   };
@@ -733,7 +735,8 @@ async function renderPdfPage(
 
 async function pdfToImages(): Promise<void> {
   const bytes = await readPdf(selectedFiles[0]);
-  const pdf = await pdfjsLib.getDocument({ data: bytes, isEvalSupported: false }).promise;
+  const loadingTask = pdfjsLib.getDocument({ data: bytes });
+  const pdf = await loadingTask.promise;
   const ranges = document.querySelector<HTMLInputElement>("#pageRanges")?.value ?? "";
   const requested = parsePageRanges(ranges, pdf.numPages);
   if (requested.length > 100) {
@@ -757,14 +760,15 @@ async function pdfToImages(): Promise<void> {
   canvas.height = 0;
   const blob = await zip.generateAsync({ type: "blob" });
   saveBlob(blob, `${base}-images.zip`);
-  await pdf.destroy();
+  await loadingTask.destroy();
   setStatus(`Exported ${requested.length} page images.`, "success");
 }
 
 async function openViewer(): Promise<void> {
   const bytes = await readPdf(selectedFiles[0]);
-  viewerDocument?.destroy();
-  viewerDocument = await pdfjsLib.getDocument({ data: bytes, isEvalSupported: false }).promise;
+  if (viewerLoadingTask) await viewerLoadingTask.destroy();
+  viewerLoadingTask = pdfjsLib.getDocument({ data: bytes });
+  viewerDocument = await viewerLoadingTask.promise;
   viewerPageNumber = 1;
   const stage = document.querySelector<HTMLDivElement>("#viewerStage");
   if (stage) stage.innerHTML = '<canvas id="viewerCanvas" aria-label="PDF page preview"></canvas>';
