@@ -1,6 +1,6 @@
 # Praxilume PDF Workbench
 
-**Status:** design approved for implementation planning; no PDF processing is implemented by this document.
+**Status:** draft; first implementation gate is an engine compatibility spike. No PDF processing is implemented by this document.
 
 ## Product goal
 
