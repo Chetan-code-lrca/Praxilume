@@ -2,10 +2,16 @@ import { degrees, PDFDocument } from "pdf-lib";
 import * as pdfjsLib from "pdfjs-dist";
 import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.mjs?url";
 import JSZip from "jszip";
-import { formatBytes, MAX_PDF_BYTES, parsePageRanges, safePdfName } from "./pdf-utils";
+import DOMPurify from "dompurify";
+import * as mammoth from "mammoth";
+import html2pdf from "html2pdf.js";
+import { Document, Packer, Paragraph, TextRun } from "docx";
+import { extractPdfTextLines, formatBytes, MAX_PDF_BYTES, parsePageRanges, safePdfName } from "./pdf-utils";
 import "./styles.css";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
+const MAX_DOCX_BYTES = 20 * 1024 * 1024;
+const MAX_WORD_EXPORT_PAGES = 250;
 
 type ToolId =
   | "merge"
@@ -14,6 +20,8 @@ type ToolId =
   | "organize"
   | "images-to-pdf"
   | "pdf-to-images"
+  | "word-to-pdf"
+  | "pdf-to-word"
   | "viewer";
 
 type ToolCategory = "Organize PDF" | "Convert" | "View";
@@ -84,6 +92,24 @@ const TOOLS: Tool[] = [
     action: "Convert pages"
   },
   {
+    id: "word-to-pdf",
+    title: "Word to PDF",
+    description: "Convert a .docx document into a print-ready PDF.",
+    category: "Convert",
+    accept: ".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    multiple: false,
+    action: "Convert to PDF"
+  },
+  {
+    id: "pdf-to-word",
+    title: "PDF to Word",
+    description: "Create an editable .docx from selectable PDF text.",
+    category: "Convert",
+    accept: ".pdf,application/pdf",
+    multiple: false,
+    action: "Convert to Word"
+  },
+  {
     id: "viewer",
     title: "PDF Viewer",
     description: "Open a PDF, preview pages, and move through it.",
@@ -101,6 +127,8 @@ const ICONS: Record<ToolId, string> = {
   organize: '<path d="M4 5h16M4 12h16M4 19h16"/><path d="m8 3-3 2 3 2m8 3 3 2-3 2"/>',
   "images-to-pdf": '<rect x="4" y="4" width="16" height="16" rx="2"/><circle cx="9" cy="9" r="1.5"/><path d="m20 15-5-5L6 20"/>',
   "pdf-to-images": '<path d="M5 3h10l4 4v14H5z"/><path d="M14 3v5h5"/><rect x="8" y="12" width="8" height="6" rx="1"/><path d="m9 17 2-2 2 2 1-1 2 2"/>',
+  "word-to-pdf": '<path d="M5 3h10l4 4v14H5z"/><path d="M14 3v5h5"/><path d="m8 12 1.5 5 1.5-4 1.5 4 1.5-5"/>',
+  "pdf-to-word": '<path d="M5 3h10l4 4v14H5z"/><path d="M14 3v5h5"/><path d="M8 12h8M8 15h6M8 18h7"/>',
   viewer: '<path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.5"/>'
 };
 
@@ -343,6 +371,20 @@ function settingsFor(id: ToolId): string {
         </div>
       </div>`;
   }
+  if (id === "word-to-pdf") {
+    return `
+      <div class="conversion-note">
+        <strong>DOCX files only</strong>
+        <span>Converts headings, paragraphs, lists, tables, and embedded images where supported. Complex Word layouts may differ. The generated PDF is image-based, so its text is not selectable or searchable.</span>
+      </div>`;
+  }
+  if (id === "pdf-to-word") {
+    return `
+      <div class="conversion-note">
+        <strong>Editable text extraction</strong>
+        <span>Creates a reflowable Word document from selectable PDF text. Original columns, graphics, tables, and exact page layout are not reconstructed. Scanned PDFs need OCR and are not supported by this converter yet.</span>
+      </div>`;
+  }
   return "";
 }
 
@@ -430,11 +472,17 @@ function acceptFiles(tool: Tool, incoming: File[]): void {
     if (tool.id === "images-to-pdf") {
       return ["image/jpeg", "image/png"].includes(file.type) || /\.(jpe?g|png)$/i.test(file.name);
     }
+    if (tool.id === "word-to-pdf") {
+      return file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" || /\.docx$/i.test(file.name);
+    }
     return file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
   });
 
   if (supported.length !== incoming.length) {
-    setStatus("Some files were skipped: use PDF files, or JPG/PNG images for Images to PDF.", "error");
+    const expected = tool.id === "images-to-pdf"
+      ? "JPG/PNG images"
+      : tool.id === "word-to-pdf" ? ".docx Word documents" : "PDF files";
+    setStatus("Some files were skipped: this tool accepts " + expected + ".", "error");
   }
   if (!supported.length) return;
 
@@ -562,6 +610,8 @@ async function runTool(tool: Tool): Promise<void> {
     else if (tool.id === "organize") await organizePdf();
     else if (tool.id === "images-to-pdf") await imagesToPdf();
     else if (tool.id === "pdf-to-images") await pdfToImages();
+    else if (tool.id === "word-to-pdf") await wordToPdf();
+    else if (tool.id === "pdf-to-word") await pdfToWord();
     else if (tool.id === "viewer") await openViewer();
   } catch (error) {
     showError(error);
@@ -709,6 +759,159 @@ async function imagesToPdf(): Promise<void> {
   }
   savePdf(await output.save(), `${getOutputName("images")}.pdf`);
   setStatus(`Created a PDF with ${selectedFiles.length} image pages.`, "success");
+}
+
+async function wordToPdf(): Promise<void> {
+  const file = selectedFiles[0];
+  if (file.size > MAX_DOCX_BYTES) {
+    throw new Error("Word to PDF is limited to 20 MB per .docx file in this browser release.");
+  }
+
+  const bytes = await file.arrayBuffer();
+  const signature = new Uint8Array(bytes, 0, Math.min(2, bytes.byteLength));
+  if (signature[0] !== 0x50 || signature[1] !== 0x4b) {
+    throw new Error("This file is not a valid .docx document. Older .doc files are not supported.");
+  }
+
+  setStatus("Reading Word document locally…");
+  const converted = await mammoth.convertToHtml({ arrayBuffer: bytes });
+  const safeHtml = DOMPurify.sanitize(converted.value, {
+    ALLOWED_TAGS: [
+      "p", "h1", "h2", "h3", "h4", "h5", "h6", "ol", "ul", "li",
+      "table", "thead", "tbody", "tr", "th", "td", "blockquote",
+      "pre", "code", "strong", "b", "em", "i", "u", "s", "sup",
+      "sub", "span", "a", "img", "br", "hr"
+    ],
+    ALLOWED_ATTR: ["href", "src", "alt", "colspan", "rowspan", "start"],
+    ALLOW_DATA_ATTR: false
+  });
+
+  if (!safeHtml.trim()) {
+    throw new Error("No readable document content was found in this .docx file.");
+  }
+
+  const renderRoot = document.createElement("div");
+  renderRoot.className = "word-pdf-render";
+  renderRoot.innerHTML = safeHtml;
+  renderRoot.querySelectorAll<HTMLImageElement>("img").forEach((image) => {
+    const source = image.getAttribute("src") ?? "";
+    if (!source.startsWith("data:image/")) image.remove();
+  });
+  document.body.append(renderRoot);
+
+  try {
+    await Promise.all(Array.from(renderRoot.querySelectorAll("img")).map((image) =>
+      image.decode().catch(() => undefined)
+    ));
+    setStatus("Rendering document pages locally…");
+    const pdfBlob = await html2pdf()
+      .set({
+        margin: [12, 14, 12, 14],
+        image: { type: "jpeg", quality: 0.94 },
+        html2canvas: {
+          scale: 1.4,
+          useCORS: false,
+          allowTaint: false,
+          backgroundColor: "#ffffff",
+          logging: false
+        },
+        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+        pagebreak: { mode: ["css", "legacy"], avoid: ["tr", "img"] },
+        enableLinks: false
+      })
+      .from(renderRoot)
+      .outputPdf("blob");
+
+    if (!(pdfBlob instanceof Blob) || pdfBlob.size === 0) {
+      throw new Error("The browser could not create a PDF from this Word document.");
+    }
+    const base = safePdfName(file.name.replace(/\.docx$/i, ""));
+    saveBlob(pdfBlob, base + ".pdf");
+    const warnings = converted.messages.filter((message) => message.type === "warning").length;
+    setStatus(
+      warnings
+        ? "Created PDF. " + warnings + " unsupported or simplified Word element(s) were reported."
+        : "Created a PDF from the Word document. Review the result for layout differences.",
+      "success"
+    );
+  } finally {
+    renderRoot.remove();
+  }
+}
+
+async function pdfToWord(): Promise<void> {
+  const bytes = await readPdf(selectedFiles[0]);
+  const loadingTask = pdfjsLib.getDocument({ data: bytes });
+  try {
+    const pdf = await loadingTask.promise;
+    if (pdf.numPages > MAX_WORD_EXPORT_PAGES) {
+      throw new Error("PDF to Word is limited to " + MAX_WORD_EXPORT_PAGES + " pages per conversion.");
+    }
+
+    const paragraphs: Paragraph[] = [];
+    let extractedCharacters = 0;
+    for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
+      setStatus("Extracting text from page " + pageNumber + " of " + pdf.numPages + "…");
+      const page = await pdf.getPage(pageNumber);
+      const content = await page.getTextContent();
+      const items = content.items
+        .filter((item) => "str" in item && typeof item.str === "string")
+        .map((item) => {
+          const textItem = item as {
+            str: string;
+            transform: number[];
+            width?: number;
+            hasEOL?: boolean;
+          };
+          return {
+            str: textItem.str,
+            x: textItem.transform[4] ?? 0,
+            y: textItem.transform[5] ?? 0,
+            width: textItem.width ?? 0,
+            hasEOL: textItem.hasEOL ?? false
+          };
+        });
+      const lines = extractPdfTextLines(items);
+      for (const line of lines) {
+        extractedCharacters += line.length;
+        paragraphs.push(new Paragraph({
+          children: [new TextRun(line)],
+          spacing: { after: 90 }
+        }));
+      }
+      if (pageNumber % 5 === 0) {
+        await new Promise((resolve) => window.setTimeout(resolve, 0));
+      }
+    }
+
+    if (!paragraphs.length || extractedCharacters === 0) {
+      throw new Error("No selectable text was found. This may be a scanned/image-only PDF; OCR is not available in this version.");
+    }
+
+    setStatus("Building editable Word document…");
+    const base = safePdfName(selectedFiles[0].name.replace(/\.pdf$/i, ""));
+    const wordDocument = new Document({
+      creator: "Praxilume PDF",
+      title: base,
+      description: "Editable text extracted locally from a PDF by Praxilume PDF.",
+      sections: [{
+        properties: {
+          page: {
+            margin: { top: 900, right: 900, bottom: 900, left: 900 }
+          }
+        },
+        children: paragraphs
+      }]
+    });
+    const blob = await Packer.toBlob(wordDocument);
+    saveBlob(blob, base + ".docx");
+    setStatus(
+      "Created an editable Word document from " + paragraphs.length + " extracted text lines. Layout and graphics were not reconstructed.",
+      "success"
+    );
+  } finally {
+    await loadingTask.destroy();
+  }
 }
 
 async function canvasToPng(canvas: HTMLCanvasElement): Promise<Blob> {
