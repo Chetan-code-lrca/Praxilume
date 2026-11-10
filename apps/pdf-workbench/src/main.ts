@@ -352,7 +352,11 @@ function bindModal(tool: Tool): void {
   const runButton = document.querySelector<HTMLButtonElement>("#runTool");
   if (!modal || !fileInput || !dropzone || !runButton) return;
 
-  const close = () => modal.remove();
+  const close = () => {
+    viewerDocument?.destroy();
+    viewerDocument = null;
+    modal.remove();
+  };
   document.querySelector<HTMLButtonElement>("#closeModal")?.addEventListener("click", close);
   document.querySelector<HTMLButtonElement>("#cancelTool")?.addEventListener("click", close);
   modal.addEventListener("click", (event) => {
@@ -383,9 +387,20 @@ function bindModal(tool: Tool): void {
   });
 
   document.querySelector<HTMLDivElement>("#selectedFiles")?.addEventListener("click", (event) => {
-    const button = (event.target as HTMLElement).closest<HTMLButtonElement>("[data-remove-file]");
-    if (!button) return;
-    selectedFiles.splice(Number(button.dataset.removeFile), 1);
+    const target = event.target as HTMLElement;
+    const moveButton = target.closest<HTMLButtonElement>("[data-move-file]");
+    if (moveButton) {
+      const index = Number(moveButton.dataset.moveFile);
+      const next = moveButton.dataset.direction === "up" ? index - 1 : index + 1;
+      if (index >= 0 && next >= 0 && next < selectedFiles.length) {
+        [selectedFiles[index], selectedFiles[next]] = [selectedFiles[next], selectedFiles[index]];
+        updateSelectedFiles(tool);
+      }
+      return;
+    }
+    const removeButton = target.closest<HTMLButtonElement>("[data-remove-file]");
+    if (!removeButton) return;
+    selectedFiles.splice(Number(removeButton.dataset.removeFile), 1);
     updateSelectedFiles(tool);
   });
 
@@ -432,6 +447,8 @@ function acceptFiles(tool: Tool, incoming: File[]): void {
     }
   } else {
     selectedFiles = [supported[0]];
+    pageOrder = [];
+    rotations = new Map();
   }
   updateSelectedFiles(tool);
 }
@@ -445,14 +462,20 @@ function updateSelectedFiles(tool: Tool): void {
           <div class="file-name">${escapeHtml(file.name)}</div>
           <div class="file-size">${formatBytes(file.size)}</div>
         </div>
-        <button class="remove-file" type="button" data-remove-file="${index}" aria-label="Remove ${escapeHtml(file.name)}">×</button>
+        <div class="page-actions">
+          ${tool.multiple ? `<button type="button" data-move-file="${index}" data-direction="up" aria-label="Move file up" ${index === 0 ? "disabled" : ""}>↑</button><button type="button" data-move-file="${index}" data-direction="down" aria-label="Move file down" ${index === selectedFiles.length - 1 ? "disabled" : ""}>↓</button>` : ""}
+          <button class="remove-file" type="button" data-remove-file="${index}" aria-label="Remove ${escapeHtml(file.name)}">×</button>
+        </div>
       </div>
     `).join("");
   }
 
   const runButton = document.querySelector<HTMLButtonElement>("#runTool");
-  if (runButton) runButton.disabled = busy || selectedFiles.length === 0;
+  if (runButton) {
+    runButton.disabled = busy || selectedFiles.length === 0 || (tool.id === "merge" && selectedFiles.length < 2) || (tool.id === "organize" && pageOrder.length === 0);
+  }
   if (tool.id === "organize" && selectedFiles[0]) {
+    if (runButton) runButton.disabled = true;
     loadOrganizePages(selectedFiles[0]).catch(showError);
   }
   if (tool.id === "organize" && !selectedFiles.length) {
@@ -497,7 +520,7 @@ function setBusy(value: boolean, message?: string): void {
   busy = value;
   const button = document.querySelector<HTMLButtonElement>("#runTool");
   if (button) {
-    button.disabled = value || selectedFiles.length === 0;
+    button.disabled = value || selectedFiles.length === 0 || (activeTool?.id === "merge" && selectedFiles.length < 2) || (activeTool?.id === "organize" && pageOrder.length === 0);
     button.textContent = value ? "Working…" : activeTool?.action ?? "Run";
   }
   if (message) setStatus(message);
@@ -703,11 +726,9 @@ async function renderPdfPage(
 ): Promise<void> {
   const page = await documentProxy.getPage(pageNumber);
   const viewport = page.getViewport({ scale });
-  const context = canvas.getContext("2d");
-  if (!context) throw new Error("Canvas rendering is not available in this browser.");
   canvas.width = Math.ceil(viewport.width);
   canvas.height = Math.ceil(viewport.height);
-  await page.render({ canvas, canvasContext: context, viewport }).promise;
+  await page.render({ canvas, viewport }).promise;
 }
 
 async function pdfToImages(): Promise<void> {
