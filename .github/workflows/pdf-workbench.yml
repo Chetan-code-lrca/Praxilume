@@ -1,0 +1,41 @@
+name: PDF Workbench
+
+on:
+  push:
+    branches:
+      - main
+      - feat/pdf-workbench-foundation
+    paths:
+      - "apps/pdf-workbench/**"
+      - ".github/workflows/pdf-workbench.yml"
+  pull_request:
+    paths:
+      - "apps/pdf-workbench/**"
+      - ".github/workflows/pdf-workbench.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Typecheck, unit tests, and production build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/pdf-workbench
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: apps/pdf-workbench/package-lock.json
+      - name: Install dependencies
+        run: npm install
+      - name: Run unit tests
+        run: npm run test
+      - name: Typecheck and build
+        run: npm run build
