@@ -8,7 +8,7 @@ Praxilume uses the ArtCraft repositories as engineering references and, where co
 | Vector illustration | storytold/vectorcraft | command adapter |
 | Video editing | storytold/filmcraft | timeline/media adapter |
 | RAW/photo development | storytold/lightcraft | image pipeline adapter |
-| PDF workbench | storytold/printcraft | document adapter |
+| PDF workbench | storytold/pdfcraft | isolated document-engine adapter |
 | Motion/VFX | storytold/effectcraft | animation/render adapter |
 | Page layout | storytold/designcraft | publishing adapter |
 
@@ -118,3 +118,8 @@ praxilume vector-commands
 ```
 
 The upstream app must be running with the control channel enabled. The write-root folder and export parent directory must exist. The unauthenticated control socket must never be exposed to untrusted networks.
+
+
+## PDF workbench decision
+
+The PDF integration target is `storytold/pdfcraft` (the current repository name). Praxilume will provide its own product UI, command IDs, policy checks, and project integration. The engine is an optional provider behind the PDF capability boundary; it is not a reason to copy upstream branding or couple the core workspace to upstream internals. See [pdf-workbench.md](pdf-workbench.md) for the implementation plan and compatibility gates.
