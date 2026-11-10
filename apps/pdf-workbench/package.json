@@ -8,7 +8,8 @@
     "typecheck": "tsc --noEmit",
     "build": "npm run typecheck && vite build",
     "preview": "vite preview --host 0.0.0.0",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "pdf-lib": "1.17.1",
@@ -18,7 +19,8 @@
   "devDependencies": {
     "typescript": "7.0.2",
     "vite": "8.3.7",
-    "vitest": "5.1.0"
+    "vitest": "5.1.0",
+    "@playwright/test": "1.65.0"
   },
   "engines": {
     "node": ">=20.19.0"
