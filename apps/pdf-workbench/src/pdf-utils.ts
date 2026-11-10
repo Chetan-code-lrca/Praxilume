@@ -56,6 +56,6 @@ export function safePdfName(name: string): string {
   const cleaned = name
     .replace(/\.pdf$/i, "")
     .replace(/[^a-zA-Z0-9._-]+/g, "-")
-    .replace(/^-+|-+$/g, "");
+    .replace(/^[._-]+|[._-]+$/g, "");
   return cleaned || "document";
 }
