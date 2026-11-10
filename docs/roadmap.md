@@ -31,7 +31,7 @@ Every operation must be represented as a Praxilume command and remain inspectabl
 - [x] Typed timeline operations for add-edit, all-track add-edit, razor and clip moves
 - [x] Normalized timeline snapshot model for sequence tracks, clips, source ranges, markers and selection
 - Photo/RAW capability pack
-- PDF/publishing capability pack
+- [ ] PDF/publishing capability pack — follow [the Praxilume PDF Workbench plan](pdf-workbench.md); PDF processing and browser UI are not implemented yet.
 - Motion/VFX capability pack
 
 All capabilities share the same project and asset graph.
