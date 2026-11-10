@@ -37,7 +37,7 @@ npm run build
 npm run test:e2e
 ```
 
-The Playwright browser tests run against the built static site and validate dashboard search, merge output, invalid page-range handling, the page viewer, and the no-document-egress assertion in the merge flow.
+The Playwright browser tests run against the built static site and validate the responsive dashboard, merge output, invalid page-range handling, the page viewer, both Office conversion directions, scanned-PDF rejection, and no-document-egress assertions.
 
 ## Deployment and CI/CD
 
@@ -58,7 +58,7 @@ The Vercel project `praxilume-pdf` is linked to this repository with its root di
 - Password-protected PDFs are not supported by this MVP.
 - Large files can consume significant browser memory. Close the tool when finished, and verify important documents with an independent PDF viewer.
 
-The current release does **not** claim to support compression, OCR, Office conversion, permanent redaction, cryptographic signatures, unlocking, or PDF/A certification. These will be added only after their processing and output can be independently verified.
+The conversion tools have specific limits: Word to PDF accepts `.docx` (not legacy `.doc`) and produces an image-based PDF, so text in that PDF is not searchable or selectable; complex Word layouts can differ. PDF to Word rebuilds editable text from selectable PDF text, but does not reproduce the original columns, graphics, charts, tables, or exact pagination. Scanned/image-only PDFs are rejected with an OCR message. Compression, OCR, permanent redaction, cryptographic signatures, unlocking, and PDF/A certification are not implemented.
 
 ## Architecture
 
@@ -66,6 +66,8 @@ The current release does **not** claim to support compression, OCR, Office conve
 - **pdf-lib:** page composition, page organization, and image embedding.
 - **PDF.js:** PDF page rendering and preview.
 - **JSZip:** package multi-file outputs for a single download.
+- **Mammoth + DOMPurify + html2pdf.js:** parse and sanitize DOCX content, then render a local PDF.
+- **docx:** generate editable DOCX files from extracted PDF text.
 - **Playwright:** end-to-end browser smoke tests.
 
 Core document operations run in the browser. Hosting serves the application assets; selected document bytes are not sent to the hosting server.

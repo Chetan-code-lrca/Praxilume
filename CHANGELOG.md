@@ -24,7 +24,14 @@
 - CI, protocol schema, security policy, roadmap, and upstream reuse documentation.
 - Browser PDF workbench MVP with merge, split-to-ZIP, page extraction, page organization (reorder/rotate/delete), JPG/PNG-to-PDF, PDF-to-PNG ZIP export, and PDF page preview.
 - Responsive searchable PDF tool dashboard with local file selection, drag-and-drop, file ordering, and new-file downloads.
+- Wider desktop dashboard with larger cards and readable tool labels.
+- Local Word-to-PDF (.docx) conversion and selectable-text PDF-to-editable-Word (.docx) conversion.
+- Office conversion limits and fidelity caveats, including explicit scanned-PDF/OCR rejection.
 - PDF Workbench setup guide, page-range utility tests, and a dedicated Node/Vite CI workflow.
+
+### PDF Workbench UI and Office conversion verification
+
+The [unified CI run](https://github.com/Chetan-code-lrca/Praxilume/actions/runs/42782742706) passed: 8 unit tests, production dependency audit, TypeScript checks, Vite build, 7 Chromium browser tests, Rust workspace checks, and the release gate. Word/PDF conversion tests verify downloaded output and local-only processing.
 
 ### Verification
 

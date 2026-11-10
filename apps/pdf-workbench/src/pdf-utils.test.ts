@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatBytes, parsePageRanges, safePdfName } from "./pdf-utils";
+import { extractPdfTextLines, formatBytes, parsePageRanges, safePdfName } from "./pdf-utils";
 
 describe("parsePageRanges", () => {
   it("expands and deduplicates page ranges while preserving requested order", () => {
@@ -29,5 +29,30 @@ describe("safePdfName", () => {
   it("removes extensions and unsafe characters", () => {
     expect(safePdfName("my private report.pdf")).toBe("my-private-report");
     expect(safePdfName("...pdf")).toBe("document");
+  });
+});
+
+
+describe("extractPdfTextLines", () => {
+  it("groups positioned text items into editable lines", () => {
+    expect(extractPdfTextLines([
+      { str: "Praxilume", x: 40, y: 740, width: 55 },
+      { str: " PDF", x: 98, y: 740, width: 25, hasEOL: true },
+      { str: "Second line", x: 40, y: 720, width: 70, hasEOL: true }
+    ])).toEqual(["Praxilume PDF", "Second line"]);
+  });
+
+  it("inserts a space between adjacent words with a visible gap", () => {
+    expect(extractPdfTextLines([
+      { str: "Local", x: 10, y: 100, width: 24 },
+      { str: "processing", x: 38, y: 100, width: 48, hasEOL: true }
+    ])).toEqual(["Local processing"]);
+  });
+
+  it("ignores empty text items and empty lines", () => {
+    expect(extractPdfTextLines([
+      { str: "", x: 0, y: 10, hasEOL: true },
+      { str: "Readable", x: 0, y: 0, hasEOL: true }
+    ])).toEqual(["Readable"]);
   });
 });

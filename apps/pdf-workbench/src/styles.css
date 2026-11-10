@@ -143,3 +143,122 @@ button:disabled { cursor: not-allowed; opacity: .48; }
   .tool-grid { grid-template-columns: 1fr; }
   .trust-row { gap: 9px; }
 }
+
+
+/* Desktop dashboard sizing: use the available screen instead of a narrow centered column. */
+@media (min-width: 621px) {
+  .app-shell { width: min(1440px, calc(100% - 64px)); }
+  .topbar { height: 72px; }
+  .brand { gap: 11px; font-size: 16px; }
+  .brand-mark { width: 32px; height: 32px; font-size: 17px; }
+  .text-link { font-size: 14px; padding: 9px 11px; }
+  .hero { padding: 66px 0 44px; }
+  .eyebrow { font-size: 12px; margin-bottom: 13px; }
+  .hero h1 { font-size: clamp(40px, 4vw, 50px); }
+  .hero p { font-size: 16px; margin: 12px 0 25px; }
+  .search-wrap { width: min(620px, 100%); }
+  .search-input { height: 54px; padding-left: 46px; font-size: 14px; }
+  .search-icon { width: 18px; height: 18px; left: 16px; }
+  .search-hint { font-size: 11px; right: 12px; }
+  .trust-row { gap: 24px; margin-top: 28px; }
+  .trust-row span { font-size: 12px; }
+  .tools-section { padding: 12px 0 64px; }
+  .section-head { margin-bottom: 17px; }
+  .section-head h2 { font-size: 18px; }
+  .tool-count { font-size: 13px; }
+  .filters { gap: 9px; margin-bottom: 20px; }
+  .filter-chip { padding: 9px 14px; font-size: 13px; }
+  .tool-grid { gap: 16px; }
+  .tool-card { min-height: 164px; padding: 21px 18px 19px; gap: 10px; border-radius: 12px; }
+  .tool-icon { width: 42px; height: 42px; border-radius: 10px; }
+  .tool-icon svg { width: 22px; height: 22px; }
+  .tool-title { font-size: 16px; }
+  .tool-desc { max-width: 280px; min-height: 0; font-size: 13px; line-height: 1.55; }
+  .footer { padding: 21px 0 32px; font-size: 12px; }
+}
+
+@media (min-width: 1600px) {
+  .app-shell { width: min(1500px, calc(100% - 96px)); }
+  .tool-grid { gap: 18px; }
+  .tool-card { min-height: 174px; }
+}
+
+.conversion-note {
+  display: grid;
+  gap: 5px;
+  margin-top: 15px;
+  padding: 13px 14px;
+  border: 1px solid rgba(137, 147, 255, .2);
+  border-radius: 9px;
+  background: rgba(112, 126, 255, .07);
+  color: #aab8d1;
+  font-size: 11px;
+  line-height: 1.55;
+}
+.conversion-note strong {
+  color: #e0e6f4;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.word-pdf-render {
+  position: fixed;
+  left: -10000px;
+  top: 0;
+  z-index: -1;
+  width: 794px;
+  min-height: 1123px;
+  padding: 46px 54px;
+  overflow: visible;
+  background: #fff;
+  color: #172033;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 14px;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+.word-pdf-render * { box-sizing: border-box; }
+.word-pdf-render h1 { margin: 0 0 22px; color: #14213b; font-size: 28px; line-height: 1.2; }
+.word-pdf-render h2 { margin: 22px 0 10px; color: #1b2b4a; font-size: 22px; line-height: 1.25; }
+.word-pdf-render h3, .word-pdf-render h4, .word-pdf-render h5, .word-pdf-render h6 {
+  margin: 17px 0 8px;
+  color: #263754;
+  font-size: 17px;
+}
+.word-pdf-render p { margin: 0 0 11px; }
+.word-pdf-render ul, .word-pdf-render ol { margin: 0 0 14px; padding-left: 27px; }
+.word-pdf-render li { margin: 0 0 5px; }
+.word-pdf-render table { width: 100%; margin: 12px 0 16px; border-collapse: collapse; table-layout: auto; }
+.word-pdf-render th, .word-pdf-render td {
+  padding: 7px 8px;
+  border: 1px solid #cbd3df;
+  text-align: left;
+  vertical-align: top;
+}
+.word-pdf-render th { background: #eef2f8; font-weight: 700; }
+.word-pdf-render img { max-width: 100%; height: auto; }
+.word-pdf-render blockquote { margin: 14px 0; padding: 3px 0 3px 14px; border-left: 3px solid #aab6ca; color: #53617a; }
+.word-pdf-render a { color: #315eb8; text-decoration: underline; }
+.word-pdf-render pre, .word-pdf-render code { white-space: pre-wrap; overflow-wrap: anywhere; }
+
+@media (max-width: 620px) {
+  .app-shell { width: min(calc(100% - 28px), 720px); }
+  .hero { padding: 42px 0 27px; }
+  .hero h1 { font-size: clamp(34px, 8vw, 42px); }
+  .hero p { font-size: 13px; }
+  .search-wrap { width: 100%; }
+  .search-input { height: 48px; font-size: 13px; }
+  .trust-row { gap: 13px; flex-wrap: wrap; }
+  .section-head h2 { font-size: 16px; }
+  .filter-chip { padding: 8px 11px; font-size: 12px; }
+  .tool-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .tool-card { min-height: 140px; padding: 15px 10px 13px; gap: 8px; }
+  .tool-icon { width: 36px; height: 36px; }
+  .tool-title { font-size: 13px; }
+  .tool-desc { font-size: 11px; min-height: 0; line-height: 1.45; }
+  .conversion-note { font-size: 10px; }
+}
+@media (max-width: 360px) {
+  .tool-grid { grid-template-columns: 1fr; }
+  .tool-card { min-height: 124px; }
+}

@@ -46,6 +46,14 @@ Praxilume PDF static web app (Vite + TypeScript)
                  download
 ```
 
+
+### Office conversion limitations
+
+- **Word to PDF:** accepts .docx only. Mammoth converts semantic document content to HTML, DOMPurify sanitizes the result, and html2pdf.js renders it locally. Tables, headings, lists, and embedded images are supported where the source can be represented in HTML. Complex positioning, headers/footers, tracked changes, and advanced page layout may differ. The current HTML-to-PDF renderer embeds rasterized page content, so output text is not searchable/selectable.
+- **PDF to Word:** extracts text from text-based PDFs with PDF.js and creates a reflowable .docx with the docx package. It does not reconstruct exact columns, tables, images, charts, fonts, or original pagination. PDFs without selectable text are rejected; OCR is not included.
+- Both conversions run locally in the browser and do not send document bytes to a Praxilume server. The input file is not modified.
+- Word conversion input is capped at 20 MB; PDF-to-Word is capped at 250 pages. These browser-side limits protect against excessive memory use, not guarantee conversion fidelity.
+
 ### User interface
 
 - Vite + TypeScript, with no frontend framework required for this compact UI.
@@ -83,7 +91,7 @@ Any upstream reuse must preserve its applicable MIT/Apache-2.0 notices and attri
 
 The current documented limits are 100 MB per PDF, 25 MB per image, 100 exported pages per PDF-to-image job, and 500 pages in the page organizer. Password-protected PDFs are not supported by this MVP.
 
-**Not implemented:** text extraction, page numbers, watermark, compression, Office conversion, OCR, password unlocking/protection, permanent redaction, cryptographic signing, PDF/A certification, PDF comparison, and AI document chat. Each requires a separately verified engine and acceptance tests.
+**Not implemented:** standalone text extraction, page numbers, watermark, compression, OCR, password unlocking/protection, permanent redaction, cryptographic signing, PDF/A certification, PDF comparison, and AI document chat. Office conversion is an early best-effort browser feature with the limits below. Each requires a separately verified engine and acceptance tests.
 
 ## Security and privacy requirements
 
@@ -106,6 +114,7 @@ The current documented limits are 100 MB per PDF, 25 MB per image, 100 exported 
 - [x] Build the responsive static web shell and searchable tool directory.
 - [x] Add local file selection, drag-and-drop, file ordering, and download flows.
 - [x] Add page-range parsing and unit tests.
+- [x] Add first-pass local Word/PDF conversion flows with browser coverage.
 - [ ] Complete independent real-file browser QA and output-fidelity comparisons.
 
 ### Milestone 1 — reliable local basics
@@ -113,7 +122,8 @@ The current documented limits are 100 MB per PDF, 25 MB per image, 100 exported 
 - [x] Implement merge, split, extract, reorder, rotate, delete, image-to-PDF, PDF-to-PNG, and page preview.
 - [ ] Add fixtures for malformed, encrypted, image-heavy, and large files.
 - [ ] Verify representative outputs open in independent PDF viewers and originals remain unchanged.
-- [ ] Add automated network-egress and browser smoke tests.
+- [x] Add automated browser smoke tests for merge, viewer, both Office conversions, and no-document-egress checks.
+- [ ] Add a larger real-file regression corpus and test more DOCX layout features.
 - [ ] Add a reproducible lockfile after dependency/build verification.
 
 ### Milestone 2 — productivity tools
