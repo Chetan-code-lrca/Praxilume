@@ -84,7 +84,7 @@ export function extractPdfTextLines(
   let previousEndX: number | null = null;
 
   const flush = () => {
-    const value = current.replace(/[\\t ]+/g, " ").trim();
+    const value = current.replace(/[\t ]+/g, " ").trim();
     if (value) lines.push(value);
     current = "";
     baseline = null;
@@ -102,8 +102,8 @@ export function extractPdfTextLines(
       flush();
     }
 
-    const startsWithSpace = /^\\s/.test(value);
-    const endsWithSpace = /\\s$/.test(current);
+    const startsWithSpace = /^\s/.test(value);
+    const endsWithSpace = /\s$/.test(current);
     const gap = previousEndX === null ? 0 : item.x - previousEndX;
     if (current && !startsWithSpace && !endsWithSpace && gap > 2) {
       current += " ";
