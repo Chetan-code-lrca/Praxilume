@@ -45,9 +45,9 @@ The Vercel project `praxilume-pdf` is linked to this repository with its root di
 
 - Every branch push and pull request receives a Vercel Preview Deployment.
 - The production branch is `main`; a merge/push to `main` triggers the production deployment.
-- GitHub Actions runs the Rust workspace CI plus the PDF Workbench CI (production dependency audit, unit tests, TypeScript checks, production build, and Playwright Chromium smoke tests).
+- One GitHub Actions workflow runs the Rust workspace checks and PDF workbench checks in parallel, followed by a `Release gate` job that fails unless both pass. The PDF job runs a production dependency audit, unit tests, TypeScript checks, a production build, and Playwright Chromium smoke tests.
 - Preview deployments are protected by Vercel Authentication. The production URL is publicly accessible.
-- For a release, verify that all required GitHub checks pass before merging the pull request. Configure GitHub branch protection to require the Rust `test` job and PDF Workbench `PDF workbench checks` job.
+- For a release, require the single `CI / Release gate` status check before merging to `main`. Configure this in GitHub under **Settings → Rules → Rulesets** (or **Settings → Branches**) for the `main` branch. In Vercel, configure **Deployment Checks** to require the same GitHub Actions check before production promotion.
 
 ## Privacy and limits
 
