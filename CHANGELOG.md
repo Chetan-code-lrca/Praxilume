@@ -22,7 +22,15 @@
 - Typed `praxilume.timeline/v1` operations for add-edit, all-track add-edit, razor and clip moves, plus a normalized sequence snapshot model and dry-run mapping.
 - Portable path validation for absolute paths, traversal, and drive-qualified paths.
 - CI, protocol schema, security policy, roadmap, and upstream reuse documentation.
+- Browser PDF workbench MVP with merge, split-to-ZIP, page extraction, page organization (reorder/rotate/delete), JPG/PNG-to-PDF, PDF-to-PNG ZIP export, and PDF page preview.
+- Responsive searchable PDF tool dashboard with local file selection, drag-and-drop, file ordering, and new-file downloads.
+- PDF Workbench setup guide, page-range utility tests, and a dedicated Node/Vite CI workflow.
 
 ### Verification
 
 Foundation CI passed rustfmt and the workspace test suite. The PhotoCraft bridge hardening passed [GitHub Actions run 38719649555](https://github.com/Chetan-code-lrca/Example2/actions/runs/38719649555). The typed image command pack passed [GitHub Actions run 38720441726](https://github.com/Chetan-code-lrca/Example2/actions/runs/38720441726): Rustfmt and workspace tests passed, with 16 unit tests and doc-test stages successful. Root-scoped PhotoCraft open/export passed [GitHub Actions run 38721088861](https://github.com/Chetan-code-lrca/Example2/actions/runs/38721088861): Rustfmt and workspace tests passed, with 20 unit tests and doc-test stages successful. Adjustment-layer and Smart Filter controls passed [GitHub Actions run 38721808097](https://github.com/Chetan-code-lrca/Example2/actions/runs/38721808097): Rustfmt and workspace tests passed, with 24 unit tests and doc-test stages successful. Initial VectorCraft support passed [GitHub Actions run 38722780911](https://github.com/Chetan-code-lrca/Example2/actions/runs/38722780911): formatting and workspace tests passed, with 32 unit tests plus doc-test stages. Live VectorCraft command discovery and read-only document inspection passed [GitHub Actions run 38724542671](https://github.com/Chetan-code-lrca/Example2/actions/runs/38724542671): formatting and workspace tests passed, with 33 unit tests plus doc-test stages. FilmCraft loopback command execution, live command discovery and sequence inspection passed [GitHub Actions run 38725127742](https://github.com/Chetan-code-lrca/Example2/actions/runs/38725127742): formatting and workspace tests passed, with 36 unit tests plus doc-test stages. Typed FilmCraft timeline operations and normalized snapshots passed [GitHub Actions run 38728091942](https://github.com/Chetan-code-lrca/Example2/actions/runs/38728091942): formatting and workspace tests passed, with 45 unit tests plus doc-test stages.
+
+
+### PDF Workbench verification
+
+The [PDF Workbench GitHub Actions run](https://github.com/Chetan-code-lrca/Praxilume/actions/runs/42774631786) passed on commit `6171e219`: all 5 utility tests passed, TypeScript type-check passed, and the Vite production build completed. This verifies the automated checks, not independent real-document/browser fidelity testing.

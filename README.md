@@ -24,6 +24,22 @@ We reuse specialist engines through explicit adapters instead of rebuilding imag
 
 **Phase 2 image editing is verified; Phase 3 now includes live VectorCraft introspection and typed FilmCraft timeline operations with normalized sequence snapshots.**
 
+## PDF Workbench — browser MVP
+
+Praxilume now includes a separate local-first browser app at [`apps/pdf-workbench`](apps/pdf-workbench/README.md). The UI is intentionally simple: search, category filters, and a compact grid of PDF tools.
+
+**Working MVP tools:** Merge PDF, Split PDF, Extract Pages, Organize Pages (reorder/rotate/delete), Images to PDF, PDF to Images (PNG), and PDF Viewer.
+
+Run it locally:
+
+```bash
+cd apps/pdf-workbench
+npm install
+npm run dev
+```
+
+This browser app uses pdf-lib, PDF.js, and JSZip. Selected document bytes are processed in the browser; no PDF upload service is included. It is an early MVP, not yet a production-ready full PDF suite. See [the implementation plan and limitations](docs/pdf-workbench.md).
+
 ```text
 praxilume/
 ├── crates/
@@ -34,6 +50,7 @@ praxilume/
 │   ├── runtime/          # project persistence + content-addressed assets
 │   ├── artcraft-bridge/  # controlled JSON-lines upstream adapter
 │   └── cli/              # functional command line interface
+├── apps/pdf-workbench/ # local-first browser PDF workbench
 ├── docs/
 ├── schemas/
 └── .github/workflows/

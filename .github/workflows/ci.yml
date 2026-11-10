@@ -1,14 +1,93 @@
-name: ci
+name: CI
 
 on:
   push:
+    branches:
+      - main
+      - "feat/**"
   pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  test:
+  rust:
+    name: Rust workspace
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - run: cargo fmt --all -- --check
-      - run: cargo test --workspace
+      - name: Check out source
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8
+        with:
+          toolchain: stable
+          components: rustfmt
+
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
+      - name: Test workspace
+        run: cargo test --workspace
+
+  pdf-workbench:
+    name: PDF workbench
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: apps/pdf-workbench
+    steps:
+      - name: Check out source
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 24
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Run unit tests
+        run: npm run test
+
+      - name: Typecheck and build
+        run: npm run build
+
+      - name: Install Chromium for browser tests
+        run: npx playwright install --with-deps chromium
+
+      - name: Run browser smoke tests
+        run: npm run test:e2e
+
+  release-gate:
+    name: Release gate
+    runs-on: ubuntu-latest
+    if: always()
+    needs:
+      - rust
+      - pdf-workbench
+    steps:
+      - name: Require all validation jobs to pass
+        env:
+          RUST_RESULT: ${{ needs.rust.result }}
+          PDF_RESULT: ${{ needs.pdf-workbench.result }}
+        run: |
+          printf 'Rust workspace: %s\n' "$RUST_RESULT"
+          printf 'PDF workbench: %s\n' "$PDF_RESULT"
+          test "$RUST_RESULT" = "success"
+          test "$PDF_RESULT" = "success"

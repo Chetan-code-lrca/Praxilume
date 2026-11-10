@@ -31,7 +31,8 @@ Every operation must be represented as a Praxilume command and remain inspectabl
 - [x] Typed timeline operations for add-edit, all-track add-edit, razor and clip moves
 - [x] Normalized timeline snapshot model for sequence tracks, clips, source ranges, markers and selection
 - Photo/RAW capability pack
-- PDF/publishing capability pack
+- [x] Browser PDF workbench MVP — merge, split, extract, organize, image conversion, and viewer; see [the app guide](../apps/pdf-workbench/README.md).
+- [ ] Rust `praxilume.pdf/v1` capability adapter, agent/CLI integration, advanced PDF tools, and independent output-fidelity verification — see [the PDF Workbench plan](pdf-workbench.md).
 - Motion/VFX capability pack
 
 All capabilities share the same project and asset graph.
