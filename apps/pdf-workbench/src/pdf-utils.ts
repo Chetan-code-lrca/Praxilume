@@ -59,3 +59,62 @@ export function safePdfName(name: string): string {
     .replace(/^[._-]+|[._-]+$/g, "");
   return cleaned || "document";
 }
+
+
+export interface PdfTextItemForWord {
+  str: string;
+  x: number;
+  y: number;
+  width?: number;
+  hasEOL?: boolean;
+}
+
+/**
+ * Reconstruct readable text lines from PDF.js text items.
+ * This preserves the parser's reading order; it does not recreate columns,
+ * graphics, page layout, or scanned/image-only content.
+ */
+export function extractPdfTextLines(
+  items: readonly PdfTextItemForWord[],
+  baselineTolerance = 2.5
+): string[] {
+  const lines: string[] = [];
+  let current = "";
+  let baseline: number | null = null;
+  let previousEndX: number | null = null;
+
+  const flush = () => {
+    const value = current.replace(/[\\t ]+/g, " ").trim();
+    if (value) lines.push(value);
+    current = "";
+    baseline = null;
+    previousEndX = null;
+  };
+
+  for (const item of items) {
+    const value = item.str;
+    if (!value) {
+      if (item.hasEOL) flush();
+      continue;
+    }
+
+    if (baseline !== null && Math.abs(item.y - baseline) > baselineTolerance) {
+      flush();
+    }
+
+    const startsWithSpace = /^\\s/.test(value);
+    const endsWithSpace = /\\s$/.test(current);
+    const gap = previousEndX === null ? 0 : item.x - previousEndX;
+    if (current && !startsWithSpace && !endsWithSpace && gap > 2) {
+      current += " ";
+    }
+
+    current += value;
+    baseline = item.y;
+    previousEndX = item.x + (item.width ?? 0);
+    if (item.hasEOL) flush();
+  }
+
+  flush();
+  return lines;
+}
