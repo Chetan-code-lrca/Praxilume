@@ -36,7 +36,7 @@ jobs:
         run: cargo fmt --all -- --check
 
       - name: Test workspace
-        run: cargo test --workspace --locked
+        run: cargo test --workspace
 
   pdf-workbench:
     name: PDF workbench
