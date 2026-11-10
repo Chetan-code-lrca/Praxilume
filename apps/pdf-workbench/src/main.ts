@@ -816,7 +816,6 @@ async function wordToPdf(): Promise<void> {
           logging: false
         },
         jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-        pagebreak: { mode: ["css", "legacy"], avoid: ["tr", "img"] },
         enableLinks: false
       })
       .from(renderRoot)
